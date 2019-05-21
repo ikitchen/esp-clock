@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Segments.h>
+#include <Delay.h>
 #include <DS3231.h>
 
 #include <ESP8266WiFi.h>
@@ -19,6 +20,7 @@ LiquidCrystal_I2C lcd(0x27, DISPLAY_LENGTH, DISPLAY_HEIGHT); // set the LCD addr
 Segments segments(&lcd);
 RTClib RTC;
 ClickButton actionButton(BUTTON_PIN, HIGH);
+Delay backlightDelay(10000);
 
 void clearMessage()
 {
@@ -54,7 +56,7 @@ void setup()
 {
   Serial.begin(9600);
   lcd.init();
-  lcd.backlight();
+  lcd.noBacklight();
 
   segments.initChars();
 
@@ -77,6 +79,8 @@ void setup()
 void loop()
 {
   actionButton.Update();
+  backlightDelay.update();
+
   segments.printChar('2', 0, 0);
   segments.printChar('3', 4, 0);
   segments.printChar('5', 8, 0);
@@ -89,5 +93,15 @@ void loop()
   if (actionButton.clicks != 0)
   {
     showMessage(String(actionButton.clicks));
+  }
+
+  if (actionButton.clicks == 1)
+  {
+    backlightDelay.start();
+    lcd.backlight();
+  }
+  if (backlightDelay.hasExpired())
+  {
+    lcd.noBacklight();
   }
 }
