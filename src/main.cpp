@@ -16,10 +16,13 @@
 #define DISPLAY_HEIGHT 4
 #define DISPLAY_LAST_LINE (DISPLAY_HEIGHT - 1)
 
+//Devices configuration
 WiFiManager wifiManager;
 LiquidCrystal_I2C lcd(0x27, DISPLAY_LENGTH, DISPLAY_HEIGHT); // set the LCD address to 0x27 for a 16 chars and 2 line display
-Segments segments(&lcd);
 RTClib RTC;
+
+//Interface configuration
+Segments segments(&lcd);
 ClickButton actionButton(BUTTON_PIN, HIGH);
 Delay backlightDelay(10000);
 Delay fullResetConfirmationDelay(5000);
@@ -60,6 +63,7 @@ void onWifiDone()
 void setup()
 {
   Serial.begin(9600);
+  actionButton.multiclickTime = 200;
   lcd.init();
   lcd.noBacklight();
 
@@ -109,7 +113,6 @@ void loop()
   }
   if (fullResetConfirmationDelay.isRunning() && actionButton.clicks == 2)
   {
-    backlightDelay.start();
     showMessage("Resetting");
     wifiManager.resetSettings();
     delay(1000);
@@ -125,6 +128,9 @@ void loop()
   if (actionButton.clicks == 1)
   {
     backlightDelay.start();
+  }
+  if (backlightDelay.hasStarted())
+  {
     lcd.backlight();
   }
   if (backlightDelay.hasExpired())

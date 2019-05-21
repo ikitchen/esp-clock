@@ -14,6 +14,8 @@ public:
     {
         startTime = millis();
         _isRunning = true;
+        hasExpiredFlag = false;
+        hasStartedFlag = true;
     }
     void update()
     {
@@ -25,7 +27,8 @@ public:
         if (startTime + value < millis())
         {
             _isRunning = false;
-            hasExpiredButNotRead = true;
+            hasExpiredFlag = true;
+            hasStartedFlag = false;
         }
     }
     bool hasExpired()
@@ -34,9 +37,22 @@ public:
         {
             return false;
         }
-        if (hasExpiredButNotRead)
+        if (hasExpiredFlag)
         {
-            hasExpiredButNotRead = false;
+            hasExpiredFlag = false;
+            return true;
+        }
+        return false;
+    }
+    bool hasStarted()
+    {
+        if (!_isRunning)
+        {
+            return false;
+        }
+        if (hasStartedFlag)
+        {
+            hasStartedFlag = false;
             return true;
         }
         return false;
@@ -50,7 +66,8 @@ private:
     unsigned long value;
     unsigned long startTime;
     bool _isRunning;
-    bool hasExpiredButNotRead;
+    bool hasExpiredFlag;
+    bool hasStartedFlag;
 };
 
 #endif // DELAY_H
