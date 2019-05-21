@@ -8,29 +8,29 @@ public:
     Delay(unsigned long value)
     {
         this->value = value;
-        isRunning = 0;
+        _isRunning = 0;
     }
     void start()
     {
         startTime = millis();
-        isRunning = true;
+        _isRunning = true;
     }
     void update()
     {
-        if (!isRunning)
+        if (!_isRunning)
         {
             return;
         }
 
         if (startTime + value < millis())
         {
-            isRunning = false;
+            _isRunning = false;
             hasExpiredButNotRead = true;
         }
     }
     bool hasExpired()
     {
-        if (isRunning)
+        if (_isRunning)
         {
             return false;
         }
@@ -41,11 +41,15 @@ public:
         }
         return false;
     }
+    bool isRunning()
+    {
+        return _isRunning;
+    }
 
 private:
     unsigned long value;
     unsigned long startTime;
-    bool isRunning;
+    bool _isRunning;
     bool hasExpiredButNotRead;
 };
 

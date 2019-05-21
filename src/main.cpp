@@ -14,6 +14,7 @@
 #define BUTTON_PIN D5
 #define DISPLAY_LENGTH 20
 #define DISPLAY_HEIGHT 4
+#define DISPLAY_LAST_LINE (DISPLAY_HEIGHT - 1)
 
 WiFiManager wifiManager;
 LiquidCrystal_I2C lcd(0x27, DISPLAY_LENGTH, DISPLAY_HEIGHT); // set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -21,21 +22,25 @@ Segments segments(&lcd);
 RTClib RTC;
 ClickButton actionButton(BUTTON_PIN, HIGH);
 Delay backlightDelay(10000);
+Delay fullResetConfirmationDelay(5000);
 
 void clearMessage()
 {
-  lcd.setCursor(0, 3);
-  lcd.print("                    ");
+  for (int i = 0; i < DISPLAY_LENGTH; i++)
+  {
+    lcd.setCursor(i, DISPLAY_LAST_LINE);
+    lcd.print(' ');
+  }
 }
 void showMessage(String message)
 {
   uint8_t len = message.length();
   uint8_t spacesLength = DISPLAY_LENGTH - len;
-  lcd.setCursor(0, 3);
+  lcd.setCursor(0, DISPLAY_LAST_LINE);
   lcd.print(message);
   for (int i = 0; i < spacesLength; i++)
   {
-    lcd.setCursor(i + len, 3);
+    lcd.setCursor(i + len, DISPLAY_LAST_LINE);
     lcd.print(' ');
   }
 }
@@ -80,6 +85,7 @@ void loop()
 {
   actionButton.Update();
   backlightDelay.update();
+  fullResetConfirmationDelay.update();
 
   segments.printChar('2', 0, 0);
   segments.printChar('3', 4, 0);
@@ -90,10 +96,31 @@ void loop()
   DateTime now = RTC.now();
   lcd.print(now.year(), DEC);
 
-  if (actionButton.clicks != 0)
+  // if (actionButton.clicks != 0)
+  // {
+  //   showMessage(String(actionButton.clicks));
+  // }
+
+  if (actionButton.clicks == 7)
   {
-    showMessage(String(actionButton.clicks));
+    backlightDelay.start();
+    fullResetConfirmationDelay.start();
+    showMessage("Full reset? 2cl=YES");
   }
+  if (fullResetConfirmationDelay.isRunning() && actionButton.clicks == 2)
+  {
+    backlightDelay.start();
+    showMessage("Resetting");
+    wifiManager.resetSettings();
+    delay(1000);
+    ESP.restart();
+  }
+  if (fullResetConfirmationDelay.hasExpired())
+  {
+    clearMessage();
+  }
+
+  //----
 
   if (actionButton.clicks == 1)
   {
