@@ -29,112 +29,111 @@ Delay fullResetConfirmationDelay(5000);
 
 void clearMessage()
 {
-  for (int i = 0; i < DISPLAY_LENGTH; i++)
-  {
-    lcd.setCursor(i, DISPLAY_LAST_LINE);
-    lcd.print(' ');
-  }
+    for (int i = 0; i < DISPLAY_LENGTH; i++)
+    {
+        lcd.setCursor(i, DISPLAY_LAST_LINE);
+        lcd.print(' ');
+    }
 }
 void showMessage(String message)
 {
-  uint8_t len = message.length();
-  uint8_t spacesLength = DISPLAY_LENGTH - len;
-  lcd.setCursor(0, DISPLAY_LAST_LINE);
-  lcd.print(message);
-  for (int i = 0; i < spacesLength; i++)
-  {
-    lcd.setCursor(i + len, DISPLAY_LAST_LINE);
-    lcd.print(' ');
-  }
+    uint8_t len = message.length();
+    uint8_t spacesLength = DISPLAY_LENGTH - len;
+    lcd.setCursor(0, DISPLAY_LAST_LINE);
+    lcd.print(message);
+    for (int i = 0; i < spacesLength; i++)
+    {
+        lcd.setCursor(i + len, DISPLAY_LAST_LINE);
+        lcd.print(' ');
+    }
 }
 
 void onWifiAP(WiFiManager *wfmgr)
 {
-  showMessage("Wifi config mode");
+    showMessage("Wifi config mode");
 }
 
 void onWifiDone()
 {
-  showMessage("Wifi configured");
-  delay(1000);
-  clearMessage();
+    showMessage("Wifi configured");
+    delay(1000);
+    clearMessage();
 }
 
 void setup()
 {
-  Serial.begin(9600);
-  actionButton.multiclickTime = 200;
-  lcd.init();
-  lcd.noBacklight();
+    Serial.begin(9600);
+    actionButton.multiclickTime = 200;
+    lcd.init();
+    lcd.noBacklight();
 
-  segments.initChars();
+    segments.initChars();
 
-  showMessage("Connecting to WIFI");
-  wifiManager.setTimeout(2);
-  wifiManager.setConfigPortalTimeout(300);
-  wifiManager.setAPCallback(onWifiAP);
-  wifiManager.setSaveConfigCallback(onWifiDone);
-  bool hasConnected = wifiManager.autoConnect();
-  if (hasConnected)
-  {
-    showMessage("Connected");
-  }
-  else
-  {
-    showMessage("Not connected");
-  }
+    showMessage("Connecting to WIFI");
+    wifiManager.setTimeout(2);
+    wifiManager.setConfigPortalTimeout(300);
+    wifiManager.setAPCallback(onWifiAP);
+    wifiManager.setSaveConfigCallback(onWifiDone);
+    bool hasConnected = wifiManager.autoConnect();
+    if (hasConnected)
+    {
+        showMessage("Connected");
+    }
+    else
+    {
+        showMessage("Not connected");
+    }
+
+    segments.printChar('2', 0, 0);
+    segments.printChar('3', 4, 0);
+    segments.printChar('5', 8, 0);
+    segments.printChar('7', 12, 0);
+
+    DateTime now = RTC.now();
+    lcd.print(now.year(), DEC);
 }
 
 void loop()
 {
-  actionButton.Update();
-  backlightDelay.update();
-  fullResetConfirmationDelay.update();
+    actionButton.Update();
+    backlightDelay.update();
+    fullResetConfirmationDelay.update();
 
-  segments.printChar('2', 0, 0);
-  segments.printChar('3', 4, 0);
-  segments.printChar('5', 8, 0);
-  segments.printChar('7', 12, 0);
-  lcd.setCursor(0, 2);
+    // if (actionButton.clicks != 0)
+    // {
+    //   showMessage(String(actionButton.clicks));
+    // }
 
-  DateTime now = RTC.now();
-  lcd.print(now.year(), DEC);
+    if (actionButton.clicks == 7)
+    {
+        backlightDelay.start();
+        fullResetConfirmationDelay.start();
+        showMessage("Full reset? 2cl=YES");
+    }
+    if (fullResetConfirmationDelay.isRunning() && actionButton.clicks == 2)
+    {
+        showMessage("Resetting");
+        wifiManager.resetSettings();
+        delay(1000);
+        ESP.restart();
+    }
+    if (fullResetConfirmationDelay.hasExpired())
+    {
+        clearMessage();
+    }
 
-  // if (actionButton.clicks != 0)
-  // {
-  //   showMessage(String(actionButton.clicks));
-  // }
+    //----
 
-  if (actionButton.clicks == 7)
-  {
-    backlightDelay.start();
-    fullResetConfirmationDelay.start();
-    showMessage("Full reset? 2cl=YES");
-  }
-  if (fullResetConfirmationDelay.isRunning() && actionButton.clicks == 2)
-  {
-    showMessage("Resetting");
-    wifiManager.resetSettings();
-    delay(1000);
-    ESP.restart();
-  }
-  if (fullResetConfirmationDelay.hasExpired())
-  {
-    clearMessage();
-  }
-
-  //----
-
-  if (actionButton.clicks == 1)
-  {
-    backlightDelay.start();
-  }
-  if (backlightDelay.hasStarted())
-  {
-    lcd.backlight();
-  }
-  if (backlightDelay.hasExpired())
-  {
-    lcd.noBacklight();
-  }
+    if (actionButton.clicks == 1)
+    {
+        backlightDelay.start();
+    }
+    if (backlightDelay.hasStarted())
+    {
+        lcd.backlight();
+    }
+    if (backlightDelay.hasExpired())
+    {
+        lcd.noBacklight();
+    }
 }
