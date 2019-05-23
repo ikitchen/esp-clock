@@ -132,6 +132,14 @@ private:
         }
     }
 
+    void printColon(uint8_t startX, uint8_t startY)
+    {
+        lcd->setCursor(startX, startY);
+        lcd->print((char)SEG_BAR_BOTTOM);
+        lcd->setCursor(startX, startY + 1);
+        lcd->print((char)SEG_BAR_BOTTOM);
+    }
+
 public:
     Segments(LiquidCrystal_I2C *lcd)
     {
@@ -171,6 +179,9 @@ public:
             break;
         case '9':
             printSegments(ch_9, x, y);
+            break;
+        case ':':
+            printColon(x, y);
             break;
 
         default:
