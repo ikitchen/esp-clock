@@ -33,6 +33,7 @@ Segments segments(&lcd);
 ClickButton actionButton(BUTTON_PIN, HIGH);
 Delay backlightDelay(10000);
 Delay fullResetConfirmationDelay(5000);
+Delay restartDelay(1000);
 
 unsigned long lastTimeDisplayTime = 0;
 
@@ -154,22 +155,26 @@ void setup()
         synchronizeTime(currentTime);
     }
     clearMessage();
-
-    DateTime now = RTC.now();
-    lcd.setCursor(0, 2);
-    lcd.print(now.year());
 }
 
 void loop()
 {
     actionButton.Update();
     backlightDelay.update();
+    restartDelay.update();
     fullResetConfirmationDelay.update();
 
     if (millis() - lastTimeDisplayTime > 500)
     {
         showCurrentTime();
         lastTimeDisplayTime = millis();
+    }
+
+    if (actionButton.clicks == 3)
+    {
+        showMessage("Restarting");
+        restartDelay.start();
+        backlightDelay.start();
     }
 
     if (actionButton.clicks == 7)
@@ -203,5 +208,9 @@ void loop()
     if (backlightDelay.hasExpired())
     {
         lcd.noBacklight();
+    }
+    if (restartDelay.hasExpired())
+    {
+        ESP.restart();
     }
 }

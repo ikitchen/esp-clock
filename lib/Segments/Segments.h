@@ -42,8 +42,8 @@ private:
 
     const char ch_1[SEGMENTS_SIZE] = {
         SEG_SPACE,
-        SEG_BAR_TOP,
-        SEG_TOP_RIGHT,
+        SEG_SPACE,
+        SEG_TOP_LEFT,
         SEG_SPACE,
         SEG_SPACE,
         SEG_BAR_DARK,
