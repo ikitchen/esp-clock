@@ -4,7 +4,6 @@
 #include <ArduinoHttpClient.h>
 #include <ArduinoJson.h>
 
-
 class ApiClient
 {
 public:
@@ -27,7 +26,10 @@ public:
 
         deserializeJson(doc, response);
         time_t unixtime = doc["unixtime"];
-        return unixtime;
+        unsigned int rawOffset = doc["raw_offset"];
+        unsigned int dstOffset = doc["dst_offset"];
+
+        return unixtime + rawOffset + dstOffset;
     }
 
 private:
