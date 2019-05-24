@@ -97,6 +97,12 @@ void synchronizeTime(time_t currentTime)
 
 void showCurrentWeather()
 {
+    for (byte x = 0; x < DISPLAY_LENGTH; x++)
+    {
+        lcd.setCursor(x, 2);
+        lcd.print(' ');
+    }
+
     if (currentWeather.isSuccessful)
     {
         lcd.setCursor(0, 2);
