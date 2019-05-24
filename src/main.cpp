@@ -36,10 +36,11 @@ ClickButton actionButton(BUTTON_PIN, HIGH);
 Delay backlightDelay(10000);
 Delay fullResetConfirmationDelay(5000);
 Delay restartDelay(1000);
+Interval showTimeInterval(500);
 Interval weatherUpdateInterval(15 * 60 * 1000);
+Interval timeUpdateInterval(3 * 60 * 60 * 1000);
 
 //State
-unsigned long lastTimeDisplayTime = 0;
 Weather currentWeather;
 
 void clearMessage()
@@ -92,11 +93,6 @@ void synchronizeTime(time_t currentTime)
     Clock.setHour(currentHour);
     Clock.setMinute(currentMinute);
     Clock.setSecond(currentSecond);
-}
-
-void getWeather()
-{
-    apiClient.getCurrentWeather(currentWeather);
 }
 
 void showCurrentWeather()
@@ -163,6 +159,16 @@ void loadWeather()
     Serial.println("Got weather");
 }
 
+void loadTime()
+{
+    Serial.println("Getting time");
+    showMessage("Getting time");
+    time_t currentTime = apiClient.getCurrentTime();
+    synchronizeTime(currentTime);
+    clearMessage();
+    Serial.println("Got time");
+}
+
 void setup()
 {
     Serial.begin(9600);
@@ -187,14 +193,8 @@ void setup()
         showMessage("Not connected");
     }
 
-    showMessage("Getting time");
-    auto currentTime = apiClient.getCurrentTime();
-    if (currentTime != 0)
-    {
-        synchronizeTime(currentTime);
-    }
-    clearMessage();
-
+    showTimeInterval.start();
+    timeUpdateInterval.start();
     weatherUpdateInterval.start();
 }
 
@@ -205,12 +205,8 @@ void loop()
     restartDelay.update();
     fullResetConfirmationDelay.update();
     weatherUpdateInterval.update();
-
-    if (millis() - lastTimeDisplayTime > 500)
-    {
-        showCurrentTime();
-        lastTimeDisplayTime = millis();
-    }
+    timeUpdateInterval.update();
+    showTimeInterval.update();
 
     if (actionButton.clicks == 3)
     {
@@ -258,6 +254,14 @@ void loop()
 
     //----
 
+    if (showTimeInterval.hasTicked())
+    {
+        showCurrentTime();
+    }
+    if (timeUpdateInterval.hasTicked())
+    {
+        loadTime();
+    }
     if (weatherUpdateInterval.hasTicked())
     {
         loadWeather();
