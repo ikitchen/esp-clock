@@ -3,6 +3,8 @@
 #include <LiquidCrystal_I2C.h>
 #include <Segments.h>
 #include <Delay.h>
+#include <Interval.h>
+#include <Weather.h>
 #include <DS3231.h>
 
 #include <ESP8266WiFi.h>
@@ -34,8 +36,11 @@ ClickButton actionButton(BUTTON_PIN, HIGH);
 Delay backlightDelay(10000);
 Delay fullResetConfirmationDelay(5000);
 Delay restartDelay(1000);
+Interval weatherUpdateInterval(15 * 60 * 1000);
 
+//State
 unsigned long lastTimeDisplayTime = 0;
+Weather currentWeather;
 
 void clearMessage()
 {
@@ -89,6 +94,30 @@ void synchronizeTime(time_t currentTime)
     Clock.setSecond(currentSecond);
 }
 
+void getWeather()
+{
+    apiClient.getCurrentWeather(currentWeather);
+}
+
+void showCurrentWeather()
+{
+    if (currentWeather.isSuccessful)
+    {
+        lcd.setCursor(0, 2);
+        if (currentWeather.temp > 0)
+        {
+            lcd.print('+');
+        }
+        if (currentWeather.temp < 0)
+        {
+            lcd.print('-');
+        }
+        lcd.print(currentWeather.temp);
+        lcd.print(' ');
+        lcd.print(currentWeather.title);
+    }
+}
+
 void showCurrentTime()
 {
     DateTime currentTime = RTC.now();
@@ -124,6 +153,16 @@ void showCurrentTime()
     lcd.print(digit5);
 }
 
+void loadWeather()
+{
+    Serial.println("Getting weather");
+    showMessage("Getting weather");
+    apiClient.getCurrentWeather(currentWeather);
+    showCurrentWeather();
+    clearMessage();
+    Serial.println("Got weather");
+}
+
 void setup()
 {
     Serial.begin(9600);
@@ -155,6 +194,8 @@ void setup()
         synchronizeTime(currentTime);
     }
     clearMessage();
+
+    weatherUpdateInterval.start();
 }
 
 void loop()
@@ -163,6 +204,7 @@ void loop()
     backlightDelay.update();
     restartDelay.update();
     fullResetConfirmationDelay.update();
+    weatherUpdateInterval.update();
 
     if (millis() - lastTimeDisplayTime > 500)
     {
@@ -212,5 +254,12 @@ void loop()
     if (restartDelay.hasExpired())
     {
         ESP.restart();
+    }
+
+    //----
+
+    if (weatherUpdateInterval.hasTicked())
+    {
+        loadWeather();
     }
 }
